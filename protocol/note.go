@@ -1,0 +1,86 @@
+package protocol
+
+import (
+	"encoding/hex"
+	"encoding/json"
+	"fmt"
+	"log"
+	"time"
+)
+
+type NostrNote struct {
+	Id        string     `json:"id"`
+	PubKey    string     `json:"pubkey"`
+	CreatedAt int64      `json:"created_at"`
+	Kind      int        `json:"kind"`
+	Tags      [][]string `json:"tags"`
+	Content   string     `json:"content"`
+	Signature string     `json:"sig"`
+}
+
+func BuildNoteToBytes(content string, keys Keys) []byte {
+
+	ser_event := serialize(
+		keys.Pub,
+		time.Now().Unix(),
+		1,
+		[][]string{},
+		content,
+	)
+	hashBytes, hash_id := GenerateIdFromSerializedEvent(ser_event)
+
+	sig, err := GenerateSignature(keys.Prv, hashBytes)
+	if err != nil {
+		return nil
+	}
+
+	data := NostrNote{
+		Id:        hash_id,
+		PubKey:    keys.Pub,
+		CreatedAt: time.Now().Unix(),
+		Kind:      1,
+		Tags:      [][]string{},
+		Content:   content,
+		Signature: sig,
+	}
+
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		fmt.Println("could not encode json when building REQ event:", err)
+		return nil
+	}
+	log.Println("[", data.Id, "]", "Build and now sending EVENT Note...")
+	return jsonData
+}
+
+func (n *NostrNote) VerifyNote() bool {
+	IdTo32 := [32]byte{}
+	idBytes, err := hex.DecodeString(n.Id)
+	if err != nil {
+		fmt.Println("could not decode id hex string to bytes when verifying the note:", err)
+		return false
+	}
+	copy(IdTo32[:], idBytes)
+	return VerifySignature(n.PubKey, n.Signature, IdTo32)
+}
+
+func serialize(pubKey string, created_at int64, kind int, tags [][]string, content string) string {
+
+	arr := []any{
+		0,
+		pubKey,
+		created_at,
+		kind,
+		tags,
+		content,
+	}
+
+	jsonBytes, err := json.Marshal(arr)
+	if err != nil {
+		panic(err)
+	}
+
+	jsonString := string(jsonBytes)
+	//log.Println(jsonString)
+	return jsonString
+}
