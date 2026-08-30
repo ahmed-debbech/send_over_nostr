@@ -49,7 +49,7 @@ func BuildNoteToBytes(content string, keys Keys) []byte {
 		fmt.Println("could not encode json when building REQ event:", err)
 		return nil
 	}
-	log.Println("[", data.Id, "]", "Build and now sending EVENT Note...")
+	log.Println("[", data.Id[:7], "]", "Build and now sending EVENT Note...")
 	return jsonData
 }
 

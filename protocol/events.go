@@ -60,6 +60,6 @@ func ParseEvent(event []byte) NostrNote {
 		log.Println("Not able to parse content of EVENT type into NostrNote because:", err, ", skipping...")
 		return NostrNote{}
 	}
-	log.Println("[", deserializedNote.Id, "]", "Recevied and parsed EVENT content into NostrNote successfully.")
+	log.Println("[", deserializedNote.Id[:7], "]", "Recevied and parsed EVENT content into NostrNote successfully.")
 	return deserializedNote
 }

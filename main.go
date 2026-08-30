@@ -86,9 +86,11 @@ func main() {
 				continue
 			}
 
-			if nostrNote.VerifyNote() {
-				log.Println("[", nostrNote.Id, "]", "Verified Note.")
+			if !nostrNote.VerifyNote() {
+				log.Println("[", nostrNote.Id[:7], "]", "Note is NOT verified.")
+				continue
 			}
+			log.Println("[", nostrNote.Id[:7], "]", "Verified Note.")
 		}
 	}
 }
