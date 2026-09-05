@@ -1,8 +1,10 @@
 package protocol
 
 import (
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -19,7 +21,9 @@ type NostrNote struct {
 	Signature string     `json:"sig"`
 }
 
-func BuildNoteToBytes(content string, sequence int64, keys Keys) []byte {
+func BuildNoteToBytes(content []byte, sequence int64, keys Keys) []byte {
+
+	contentBase64 := base64.StdEncoding.EncodeToString([]byte(content))
 
 	ser_event := serialize(
 		keys.Pub,
@@ -28,7 +32,7 @@ func BuildNoteToBytes(content string, sequence int64, keys Keys) []byte {
 		[][]string{
 			{"seq", strconv.FormatInt(sequence, 10)},
 		},
-		content,
+		contentBase64,
 	)
 	hashBytes, hash_id := GenerateIdFromSerializedEvent(ser_event)
 
@@ -45,7 +49,7 @@ func BuildNoteToBytes(content string, sequence int64, keys Keys) []byte {
 		Tags: [][]string{
 			{"seq", strconv.FormatInt(sequence, 10)},
 		},
-		Content:   content,
+		Content:   contentBase64,
 		Signature: sig,
 	}
 
@@ -54,6 +58,7 @@ func BuildNoteToBytes(content string, sequence int64, keys Keys) []byte {
 		fmt.Println("could not encode json when building REQ event:", err)
 		return nil
 	}
+
 	log.Println("[", data.Id[:7], "]", "Build and now sending EVENT Note...")
 	return jsonData
 }
@@ -88,4 +93,14 @@ func serialize(pubKey string, created_at int64, kind int, tags [][]string, conte
 	jsonString := string(jsonBytes)
 	//log.Println(jsonString)
 	return jsonString
+}
+
+func NormalizeNote(note *NostrNote) error {
+	c, err := base64.StdEncoding.DecodeString(string(note.Content))
+	if err != nil {
+		log.Println("could not decode base64 content of the note:", err)
+		return errors.New("could not decode base64 content of the note: " + err.Error())
+	}
+	note.Content = string(c)
+	return nil
 }

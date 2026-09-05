@@ -13,7 +13,7 @@ func REQEvent() []byte {
 		map[string]interface{}{
 			"kinds": []int{1},
 			"authors": []string{
-				"a3ee81adbf46ead4252a10f82f870f5c096eeb1d0e7e49ca521db3bef4e78761",
+				"3675de6261c8b37dedd2ff686724e901c535d254a07d511498acb3ef07051eb5",
 			},
 		},
 	}
