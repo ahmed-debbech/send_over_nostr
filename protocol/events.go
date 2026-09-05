@@ -13,7 +13,7 @@ func REQEvent() []byte {
 		map[string]interface{}{
 			"kinds": []int{1},
 			"authors": []string{
-				"807e8dfa713d4f32b78732b939e27fb3bfaf0d93432e8ed56676e334f4425e8b",
+				"a3ee81adbf46ead4252a10f82f870f5c096eeb1d0e7e49ca521db3bef4e78761",
 			},
 		},
 	}
@@ -43,7 +43,10 @@ func EVENTevent(event []byte) []byte {
 func ParseEvent(event []byte) NostrNote {
 
 	var deserialized []json.RawMessage
-	json.Unmarshal(event, &deserialized)
+	if err := json.Unmarshal(event, &deserialized); err != nil {
+		log.Println("Not able to parse EVENT type because:", err, ", skipping...")
+		return NostrNote{}
+	}
 
 	if len(deserialized) != 3 {
 		log.Println("Not correct length of EVENT type, skipping...")

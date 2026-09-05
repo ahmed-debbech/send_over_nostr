@@ -42,6 +42,7 @@ func main() {
 			log.Fatal(err)
 		}
 
+		var sequenceNumber int64 = 0
 		for {
 			file, err := os.Open("input")
 			if err != nil {
@@ -57,9 +58,11 @@ func main() {
 				relay.Send(protocol.EVENTevent(
 					protocol.BuildNoteToBytes(
 						scanner.Text(),
+						sequenceNumber,
 						keys,
 					),
 				))
+				sequenceNumber++
 				time.Sleep(time.Second * 2)
 			}
 		}
@@ -78,6 +81,8 @@ func main() {
 		}
 		chEvents := relay.Subscribe()
 		relay.Send(protocol.REQEvent())
+
+		bufferer := NewBufferer(100)
 		for {
 			ev := <-chEvents
 			//log.Println(string(ev))
@@ -91,6 +96,7 @@ func main() {
 				continue
 			}
 			log.Println("[", nostrNote.Id[:7], "]", "Verified Note.")
+			bufferer.Buffer(nostrNote)
 		}
 	}
 }

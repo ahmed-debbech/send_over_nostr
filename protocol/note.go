@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
 	"time"
 )
 
@@ -18,13 +19,15 @@ type NostrNote struct {
 	Signature string     `json:"sig"`
 }
 
-func BuildNoteToBytes(content string, keys Keys) []byte {
+func BuildNoteToBytes(content string, sequence int64, keys Keys) []byte {
 
 	ser_event := serialize(
 		keys.Pub,
 		time.Now().Unix(),
 		1,
-		[][]string{},
+		[][]string{
+			{"seq", strconv.FormatInt(sequence, 10)},
+		},
 		content,
 	)
 	hashBytes, hash_id := GenerateIdFromSerializedEvent(ser_event)
@@ -39,7 +42,9 @@ func BuildNoteToBytes(content string, keys Keys) []byte {
 		PubKey:    keys.Pub,
 		CreatedAt: time.Now().Unix(),
 		Kind:      1,
-		Tags:      [][]string{},
+		Tags: [][]string{
+			{"seq", strconv.FormatInt(sequence, 10)},
+		},
 		Content:   content,
 		Signature: sig,
 	}
