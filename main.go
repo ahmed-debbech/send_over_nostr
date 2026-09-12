@@ -1,16 +1,17 @@
 package main
 
 import (
-	"bufio"
 	"flag"
 	"log"
-	"os"
 	"time"
 
 	"github.com/ahmed-debbech/nostr_talk/config"
 	"github.com/ahmed-debbech/nostr_talk/datasource"
+	"github.com/ahmed-debbech/nostr_talk/datatarget"
 	"github.com/ahmed-debbech/nostr_talk/protocol"
 )
+
+const sendId = "jdjdd"
 
 func main() {
 	log.Println("Hello Nostr!")
@@ -35,7 +36,7 @@ func main() {
 		log.Println("Using t (Transmitter mode)")
 
 		relay := Relay{
-			Host:   "nos.lol",
+			Host:   "relay.pocketstr.com",
 			Scheme: "wss",
 			Path:   "",
 		}
@@ -44,7 +45,10 @@ func main() {
 		}
 
 		d_source := datasource.FileSource{}
-		d_source.Init()
+		if err := d_source.Init(); err != nil {
+			log.Fatal(err)
+		}
+
 		datasourceCh := d_source.StartFetch()
 
 		var sequenceNumber int64 = 0
@@ -57,6 +61,7 @@ func main() {
 			relay.Send(protocol.EVENTevent(
 				protocol.BuildNoteToBytes(
 					dataBin,
+					sendId,
 					sequenceNumber,
 					keys,
 				),
@@ -72,7 +77,7 @@ func main() {
 		log.Println("Using r (Receiving mode)")
 
 		relay := Relay{
-			Host:   "nos.lol",
+			Host:   "relay.pocketstr.com",
 			Scheme: "wss",
 			Path:   "",
 		}
@@ -80,33 +85,22 @@ func main() {
 			log.Fatal(err)
 		}
 		chEvents := relay.Subscribe()
-		relay.Send(protocol.REQEvent())
+		relay.Send(protocol.REQEvent(sendId))
 
-		bufferer := NewBufferer(100)
+		bufferer := NewBufferer(10000)
+
+		fileTarget := datatarget.FileTarget{}
+		fileTarget.Init()
+		fileTargetCh := fileTarget.ListenForData()
 
 		go func() {
-			file, err := os.OpenFile(
-				"test1.jpg",
-				os.O_CREATE|os.O_WRONLY|os.O_APPEND,
-				0644,
-			)
-			if err != nil {
-				log.Fatal(err)
-			}
-			writer := bufio.NewWriterSize(file, 4*1024*1024)
-			defer file.Close()
-
 			for {
-				if _, err := writer.Write([]byte(bufferer.Pop().Content)); err != nil {
-					log.Fatal(err)
-				}
-				writer.Flush()
+				fileTargetCh <- []byte(bufferer.Pop().Content)
 			}
 		}()
 
 		for {
 			ev := <-chEvents
-			//log.Println(string(ev))
 			nostrNote := protocol.ParseEvent(ev)
 			if nostrNote.Id == "" {
 				log.Println("could not parse the event into a NostrNote, skipping this one...")
@@ -121,7 +115,6 @@ func main() {
 			if err := protocol.NormalizeNote(&nostrNote); err != nil {
 				log.Fatal("[FATAL] [", nostrNote.Id[:7], "]", "Could not normalize Note because:", err)
 			}
-
 			bufferer.Buffer(nostrNote)
 
 		}

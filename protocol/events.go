@@ -6,7 +6,7 @@ import (
 	"log"
 )
 
-func REQEvent() []byte {
+func REQEvent(sendId string) []byte {
 	data := []interface{}{
 		"REQ",
 		"myssss",
@@ -15,6 +15,9 @@ func REQEvent() []byte {
 			"authors": []string{
 				"3675de6261c8b37dedd2ff686724e901c535d254a07d511498acb3ef07051eb5",
 			},
+			"#t": []string{sendId},
+
+			//"since": (time.Now().Unix() - 10),
 		},
 	}
 
@@ -63,6 +66,6 @@ func ParseEvent(event []byte) NostrNote {
 		log.Println("Not able to parse content of EVENT type into NostrNote because:", err, ", skipping...")
 		return NostrNote{}
 	}
-	log.Println("[", deserializedNote.Id[:7], "]", "Recevied and parsed EVENT content into NostrNote successfully.")
+	log.Println("[", deserializedNote.Id[:7], "]", "Recevied and parsed EVENT content into NostrNote successfully, sequence:", deserializedNote.Tags[0][1], ".")
 	return deserializedNote
 }

@@ -21,8 +21,7 @@ type NostrNote struct {
 	Signature string     `json:"sig"`
 }
 
-func BuildNoteToBytes(content []byte, sequence int64, keys Keys) []byte {
-
+func BuildNoteToBytes(content []byte, sendId string, sequence int64, keys Keys) []byte {
 	contentBase64 := base64.StdEncoding.EncodeToString([]byte(content))
 
 	ser_event := serialize(
@@ -31,6 +30,7 @@ func BuildNoteToBytes(content []byte, sequence int64, keys Keys) []byte {
 		1,
 		[][]string{
 			{"seq", strconv.FormatInt(sequence, 10)},
+			{"t", sendId},
 		},
 		contentBase64,
 	)
@@ -48,6 +48,7 @@ func BuildNoteToBytes(content []byte, sequence int64, keys Keys) []byte {
 		Kind:      1,
 		Tags: [][]string{
 			{"seq", strconv.FormatInt(sequence, 10)},
+			{"t", sendId},
 		},
 		Content:   contentBase64,
 		Signature: sig,
@@ -58,8 +59,7 @@ func BuildNoteToBytes(content []byte, sequence int64, keys Keys) []byte {
 		fmt.Println("could not encode json when building REQ event:", err)
 		return nil
 	}
-
-	log.Println("[", data.Id[:7], "]", "Build and now sending EVENT Note...")
+	log.Println("[", data.Id[:7], "]", "Build and now sending EVENT Note sequence: ", sequence, "...")
 	return jsonData
 }
 
